@@ -13,10 +13,12 @@ namespace RazorPagesMovie.Pages.Movies
     public class IndexModel : PageModel
     {
         private readonly RazorPagesMovie.Data.RazorPagesMovieContext _context;
+        private readonly ILogger<CreateModel> _logger;
 
-        public IndexModel(RazorPagesMovie.Data.RazorPagesMovieContext context)
+        public IndexModel(RazorPagesMovie.Data.RazorPagesMovieContext context, ILogger<CreateModel> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public IList<Movie> Movie { get; set; }
@@ -28,6 +30,7 @@ namespace RazorPagesMovie.Pages.Movies
 
         public async Task OnGetAsync()
         {
+            _logger.LogInformation("This is NLog logging, Index Model on get async");
             // Use LINQ to get list of genres.
             IQueryable<string> genreQuery = from m in _context.Movie
                                             orderby m.Genre

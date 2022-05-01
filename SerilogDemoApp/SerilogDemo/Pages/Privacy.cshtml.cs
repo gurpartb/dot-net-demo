@@ -1,7 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace RazorPagesMovie.Pages
+namespace SerilogDemo.Pages
 {
     public class PrivacyModel : PageModel
     {
@@ -14,7 +19,6 @@ namespace RazorPagesMovie.Pages
 
         public void OnGet()
         {
-            _logger.LogInformation("This is NLog logging, privacy model onget");
         }
     }
 }
