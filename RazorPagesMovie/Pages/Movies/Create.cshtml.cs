@@ -13,10 +13,10 @@ namespace RazorPagesMovie.Pages.Movies
 {
     public class CreateModel : PageModel
     {
-        private readonly RazorPagesMovie.Data.RazorPagesMovieContext _context;
+        private readonly RazorPagesMovieContext _context;
         private readonly ILogger<CreateModel> _logger;
 
-        public CreateModel(RazorPagesMovie.Data.RazorPagesMovieContext context, ILogger<CreateModel> logger)
+        public CreateModel(RazorPagesMovieContext context, ILogger<CreateModel> logger)
         {
             _context = context;
             _logger = logger;
