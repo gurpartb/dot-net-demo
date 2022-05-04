@@ -1,11 +1,6 @@
 ﻿#nullable disable
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using RazorPagesMovie.Data;
 using RazorPagesMovie.Models;
 
@@ -20,11 +15,12 @@ namespace RazorPagesMovie.Pages.Movies
         {
             _context = context;
             _logger = logger;
+            _logger.LogDebug("Constructor, initialize logger CreateModel");
         }
 
         public IActionResult OnGet()
         {
-            _logger.LogInformation("This is NLog logging, on get");
+            _logger.LogDebug("OnGet");
             return Page();
         }
 
@@ -34,15 +30,19 @@ namespace RazorPagesMovie.Pages.Movies
         // To protect from overposting attacks, see https://aka.ms/RazorPagesCRUD
         public async Task<IActionResult> OnPostAsync()
         {
-            _logger.LogInformation("This is NLog logging, on post async");
+            _logger.LogDebug("OnPostAsyc");
             if (!ModelState.IsValid)
             {
+                _logger.LogInformation("ModelState is not valid {ModelState}", ModelState);
                 return Page();
             }
 
             _context.Movie.Add(Movie);
+            
             await _context.SaveChangesAsync();
-
+            _logger.LogInformation("Movie Created: {MovieTitle} {MovieId} {MovieGenre} {MovieRating} {MovieReleaseDate}", Movie.Title, Movie.ID, Movie.Genre, Movie.Rating, Movie.ReleaseDate);
+            
+            _logger.LogDebug("Redirect to page ./Index");
             return RedirectToPage("./Index");
         }
     }

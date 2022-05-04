@@ -10,13 +10,12 @@ namespace RazorPagesMovie.Pages
         public IndexModel(ILogger<IndexModel> logger)
         {
             _logger = logger;
-            _logger.LogInformation("This is NLog logging, index model constructor");
+            _logger.LogDebug("Constructor, initialize logger IndexModel");
         }
 
         public void OnGet()
         {
-            _logger.LogInformation("This is NLog logging, on get");
-
+            _logger.LogDebug("OnGet");
         }
     }
 }

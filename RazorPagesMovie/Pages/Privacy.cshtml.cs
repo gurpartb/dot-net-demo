@@ -10,11 +10,12 @@ namespace RazorPagesMovie.Pages
         public PrivacyModel(ILogger<PrivacyModel> logger)
         {
             _logger = logger;
+            _logger.LogDebug("Constructor, initialize logger PrivacyModel");
         }
 
         public void OnGet()
         {
-            _logger.LogInformation("This is NLog logging, privacy model onget");
+            _logger.LogDebug("OnGet");
         }
     }
 }

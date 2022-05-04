@@ -3,22 +3,20 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using RazorPagesMovie.Data;
 using RazorPagesMovie.Models;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
 namespace RazorPagesMovie.Pages.Movies
 {
     public class IndexModel : PageModel
     {
-        private readonly RazorPagesMovie.Data.RazorPagesMovieContext _context;
-        private readonly ILogger<CreateModel> _logger;
+        private readonly RazorPagesMovieContext _context;
+        private readonly ILogger<IndexModel> _logger;
 
-        public IndexModel(RazorPagesMovie.Data.RazorPagesMovieContext context, ILogger<CreateModel> logger)
+        public IndexModel(RazorPagesMovieContext context, ILogger<IndexModel> logger)
         {
             _context = context;
             _logger = logger;
+            _logger.LogDebug("Constructor, intialize logger IndexModel");
         }
 
         public IList<Movie> Movie { get; set; }
@@ -30,7 +28,7 @@ namespace RazorPagesMovie.Pages.Movies
 
         public async Task OnGetAsync()
         {
-            _logger.LogInformation("This is NLog logging, Index Model on get async");
+            _logger.LogDebug("OnGetAsync");
             // Use LINQ to get list of genres.
             IQueryable<string> genreQuery = from m in _context.Movie
                                             orderby m.Genre
@@ -41,13 +39,16 @@ namespace RazorPagesMovie.Pages.Movies
 
             if (!string.IsNullOrEmpty(SearchString))
             {
+                _logger.LogInformation("searching for movies titles that contain '{MovieTitle}'", SearchString);
                 movies = movies.Where(s => s.Title.Contains(SearchString));
             }
 
             if (!string.IsNullOrEmpty(MovieGenre))
             {
+                _logger.LogInformation("movie genre={MovieGenre}", MovieGenre);
                 movies = movies.Where(x => x.Genre == MovieGenre);
             }
+
             Genres = new SelectList(await genreQuery.Distinct().ToListAsync());
             Movie = await movies.ToListAsync();
         }

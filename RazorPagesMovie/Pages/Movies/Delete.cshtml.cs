@@ -1,8 +1,4 @@
 ﻿#nullable disable
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -13,11 +9,14 @@ namespace RazorPagesMovie.Pages.Movies
 {
     public class DeleteModel : PageModel
     {
-        private readonly RazorPagesMovie.Data.RazorPagesMovieContext _context;
+        private readonly RazorPagesMovieContext _context;
+        private readonly ILogger<DeleteModel> _logger;
 
-        public DeleteModel(RazorPagesMovie.Data.RazorPagesMovieContext context)
+        public DeleteModel(RazorPagesMovieContext context, ILogger<DeleteModel> logger)
         {
             _context = context;
+            _logger = logger;
+            _logger.LogDebug("Constructor, intialize logger DeleteModel");
         }
 
         [BindProperty]
@@ -25,8 +24,10 @@ namespace RazorPagesMovie.Pages.Movies
 
         public async Task<IActionResult> OnGetAsync(int? id)
         {
+            _logger.LogDebug("OnGetAsync");
             if (id == null)
             {
+                _logger.LogInformation("id is null {MovieID}", id);
                 return NotFound();
             }
 
@@ -34,15 +35,20 @@ namespace RazorPagesMovie.Pages.Movies
 
             if (Movie == null)
             {
+                _logger.LogInformation("not found movie {MovieID}", id);
                 return NotFound();
             }
+
+            _logger.LogInformation("found movie {MovieTitle} {MovieID}", Movie.Title, Movie.ID);
             return Page();
         }
 
         public async Task<IActionResult> OnPostAsync(int? id)
         {
+            _logger.LogDebug("OnPostAsync");
             if (id == null)
             {
+                _logger.LogInformation("not found {MovieID}", id);
                 return NotFound();
             }
 
@@ -51,7 +57,13 @@ namespace RazorPagesMovie.Pages.Movies
             if (Movie != null)
             {
                 _context.Movie.Remove(Movie);
+                _logger.LogInformation("Deleted movie {MovieTitle} {MovieID}", Movie.Title, Movie.ID);
                 await _context.SaveChangesAsync();
+                _logger.LogDebug("Deleted movie, SaveChangesAsync {MovieTitle} {MovieID}", Movie.Title, Movie.ID);
+            }
+            else
+            {
+                _logger.LogInformation("not found movie {MovieID}", id);
             }
 
             return RedirectToPage("./Index");

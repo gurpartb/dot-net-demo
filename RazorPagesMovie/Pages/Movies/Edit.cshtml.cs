@@ -1,11 +1,6 @@
 ﻿#nullable disable
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using RazorPagesMovie.Data;
 using RazorPagesMovie.Models;
@@ -14,11 +9,14 @@ namespace RazorPagesMovie.Pages.Movies
 {
     public class EditModel : PageModel
     {
-        private readonly RazorPagesMovie.Data.RazorPagesMovieContext _context;
+        private readonly RazorPagesMovieContext _context;
+        private readonly ILogger<EditModel> _logger;
 
-        public EditModel(RazorPagesMovie.Data.RazorPagesMovieContext context)
+        public EditModel(RazorPagesMovieContext context, ILogger<EditModel> logger)
         {
             _context = context;
+            _logger = logger;
+            _logger.LogDebug("Constructor, intialize logger EditModel");
         }
 
         [BindProperty]
@@ -26,8 +24,10 @@ namespace RazorPagesMovie.Pages.Movies
 
         public async Task<IActionResult> OnGetAsync(int? id)
         {
+            _logger.LogDebug("OnGetAsync");
             if (id == null)
             {
+                _logger.LogInformation("Movie not found {MovieID}", id);
                 return NotFound();
             }
 
@@ -35,8 +35,10 @@ namespace RazorPagesMovie.Pages.Movies
 
             if (Movie == null)
             {
+                _logger.LogInformation("Movie not found {MovieID}", id);
                 return NotFound();
             }
+            _logger.LogDebug("Movie found {MovieID}", id);
             return Page();
         }
 
@@ -44,8 +46,10 @@ namespace RazorPagesMovie.Pages.Movies
         // For more details, see https://aka.ms/RazorPagesCRUD.
         public async Task<IActionResult> OnPostAsync()
         {
+            _logger.LogDebug("OnPostAsync");
             if (!ModelState.IsValid)
             {
+                _logger.LogInformation("Model State is not valid");
                 return Page();
             }
 
@@ -53,26 +57,38 @@ namespace RazorPagesMovie.Pages.Movies
 
             try
             {
+                _logger.LogInformation("Model State is not valid");
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
                 if (!MovieExists(Movie.ID))
                 {
+                    _logger.LogError(ex, "Unable to save changes, not found {MovieId}", Movie.ID);
                     return NotFound();
                 }
                 else
                 {
+                    _logger.LogCritical(ex, "Unable to save changes {MovieId}", Movie.ID);
                     throw;
                 }
             }
-
+            _logger.LogDebug("Redirec to page Index");
             return RedirectToPage("./Index");
         }
 
         private bool MovieExists(int id)
         {
-            return _context.Movie.Any(e => e.ID == id);
+            var movieExists = _context.Movie.Any(e => e.ID == id);
+            if(movieExists)
+            {
+                _logger.LogDebug("Movie Exists {MovieId}", id);
+            }
+            else
+            {
+                _logger.LogInformation("Movie Does Not Exists {MovieId}", id);
+            }
+            return movieExists;
         }
     }
 }

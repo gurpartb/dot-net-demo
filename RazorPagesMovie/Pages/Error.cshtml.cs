@@ -21,8 +21,8 @@ namespace RazorPagesMovie.Pages
 
         public void OnGet()
         {
-            _logger.LogInformation("This is NLog logging, error model onget");
             RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier;
+            _logger.LogInformation("OnGet RequestId {RequestId}",RequestId);
         }
     }
 }

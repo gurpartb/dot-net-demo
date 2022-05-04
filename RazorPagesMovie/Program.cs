@@ -4,12 +4,11 @@ using RazorPagesMovie.Models;
 using NLog;
 using NLog.Web;
 
-var logger = NLog.LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
+var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
 logger.Debug("init main");
 
 try
 {
-
     var builder = WebApplication.CreateBuilder(args);
 
     builder.Services.AddRazorPages();
@@ -19,7 +18,12 @@ try
 
     // NLog: Setup NLog for Dependency injection
     builder.Logging.ClearProviders();
+    logger.Info("clear providers");
+
     builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
+    logger.Info("set min log level {MinLogLevel}");
+
+
     builder.Host.UseNLog();
 
     logger.Info("building");
@@ -35,6 +39,7 @@ try
 
     if (!app.Environment.IsDevelopment())
     {
+        logger.Info("develop environment, use ExceptionsHandler /Error");
         app.UseExceptionHandler("/Error");
         app.UseHsts();
     }
@@ -59,5 +64,6 @@ catch (Exception exception)
 finally
 {
     // Ensure to flush and stop internal timers/threads before application-exit (Avoid segmentation fault on Linux)
-    NLog.LogManager.Shutdown();
+    logger.Info("log manager shutdown");
+    LogManager.Shutdown();
 }
