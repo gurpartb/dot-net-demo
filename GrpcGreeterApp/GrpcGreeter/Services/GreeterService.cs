@@ -18,5 +18,13 @@ namespace GrpcGreeter.Services
                 Message = "Hello " + request.Name
             });
         }
+
+        public override Task<ThankYouReply> SayThankYou(ThankYouRequest request, ServerCallContext context)
+        {
+            return Task.FromResult(new ThankYouReply
+            {
+                Message = "My Pleasure " + request.Name
+            });
+        }
     }
 }
