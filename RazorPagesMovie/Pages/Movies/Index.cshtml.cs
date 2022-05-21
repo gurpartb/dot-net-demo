@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.Metrics;
+using OpenTelemetry.Metrics;
 using RazorPagesMovie.Data;
 using RazorPagesMovie.Models;
 namespace RazorPagesMovie.Pages.Movies
@@ -11,11 +13,14 @@ namespace RazorPagesMovie.Pages.Movies
     {
         private readonly RazorPagesMovieContext _context;
         private readonly ILogger<IndexModel> _logger;
+        //private readonly Meter _meter;
+        //private readonly Counter<int> _indexPageCount;
 
         public IndexModel(RazorPagesMovieContext context, ILogger<IndexModel> logger)
-        {
+        { 
             _context = context;
             _logger = logger;
+
             _logger.LogDebug("Constructor, intialize logger IndexModel");
         }
 

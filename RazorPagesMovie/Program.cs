@@ -1,69 +1,124 @@
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using RazorPagesMovie.Data;
 using RazorPagesMovie.Models;
-using NLog;
-using NLog.Web;
+using System.Reflection;
 
-var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
-logger.Debug("init main");
+var builder = WebApplication.CreateBuilder(args);
 
-try
+var serviceName = "RazorPagesMovie";
+
+var assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
+
+// Traces
+var tracingExporter = builder.Configuration.GetValue<string>("UseTracingExporter").ToLowerInvariant();
+var resourceBuilder = tracingExporter switch
 {
-    var builder = WebApplication.CreateBuilder(args);
+    "otlp" => ResourceBuilder.CreateDefault().AddService(builder.Configuration.GetValue<string>("Otlp:ServiceName"), serviceVersion: assemblyVersion, serviceInstanceId: Environment.MachineName),
+    _ => ResourceBuilder.CreateDefault().AddService(serviceName, serviceVersion: assemblyVersion, serviceInstanceId: Environment.MachineName),
+};
+builder.Services.AddOpenTelemetryTracing(options =>
+{
+    options
+        .SetResourceBuilder(resourceBuilder)
+        .SetSampler(new AlwaysOnSampler())
+        .AddHttpClientInstrumentation()
+        .AddAspNetCoreInstrumentation();
 
-    builder.Services.AddRazorPages();
-
-    builder.Services.AddDbContext<RazorPagesMovieContext>(options =>
-           options.UseSqlServer(builder.Configuration.GetConnectionString("RazorPagesMovieContext")));
-
-    // NLog: Setup NLog for Dependency injection
-    builder.Logging.ClearProviders();
-    logger.Info("clear providers");
-
-    builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
-    logger.Info("set min log level {MinLogLevel}");
-
-
-    builder.Host.UseNLog();
-
-    logger.Info("building");
-
-    var app = builder.Build();
-
-    using (var scope = app.Services.CreateScope())
+    switch (tracingExporter)
     {
-        var services = scope.ServiceProvider;
+        case "otlp":
+            options.AddOtlpExporter(otlpOptions =>
+            {
+                otlpOptions.Endpoint = new Uri(builder.Configuration.GetValue<string>("Otlp:Endpoint"));
+            });
+            break;
 
-        SeedData.Initialize(services);
+        default:
+            options.AddConsoleExporter();
+
+            break;
     }
+});
 
-    if (!app.Environment.IsDevelopment())
+// Logs
+builder.Logging.ClearProviders();
+builder.Logging.AddOpenTelemetry(options =>
+{
+    options.SetResourceBuilder(resourceBuilder);
+    var logExporter = builder.Configuration.GetValue<string>("UseLogExporter").ToLowerInvariant();
+    switch (logExporter)
     {
-        logger.Info("develop environment, use ExceptionsHandler /Error");
-        app.UseExceptionHandler("/Error");
-        app.UseHsts();
+        case "otlp":
+            options.AddOtlpExporter(otlpOptions =>
+            {
+                otlpOptions.Endpoint = new Uri(builder.Configuration.GetValue<string>("Otlp:Endpoint"));
+            });
+            break;
+        default:
+            options.AddConsoleExporter();
+            break;
     }
-
-    app.UseHttpsRedirection();
-    app.UseStaticFiles();
-
-    app.UseRouting();
-
-    app.UseAuthorization();
-
-    app.MapRazorPages();
-
-    app.Run();
-}
-catch (Exception exception)
+});
+builder.Services.Configure<OpenTelemetryLoggerOptions>(opt =>
 {
-    // NLog: catch setup errors
-    logger.Error(exception, "Stopped program because of exception");
-    throw;
-}
-finally
+    opt.IncludeScopes = true;
+    opt.ParseStateValues = true;
+    opt.IncludeFormattedMessage = true;
+});
+
+
+// Metrics
+builder.Services.AddOpenTelemetryMetrics(options =>
 {
-    // Ensure to flush and stop internal timers/threads before application-exit (Avoid segmentation fault on Linux)
-    logger.Info("log manager shutdown");
-    LogManager.Shutdown();
+    options
+        .SetResourceBuilder(resourceBuilder)
+        .AddHttpClientInstrumentation()
+        .AddAspNetCoreInstrumentation();
+    var metricsExporter = builder.Configuration.GetValue<string>("UseMetricsExporter").ToLowerInvariant();
+    switch (metricsExporter)
+    {
+        case "otlp":
+            options.AddOtlpExporter(otlpOptions =>
+            {
+                otlpOptions.Endpoint = new Uri(builder.Configuration.GetValue<string>("Otlp:Endpoint"));
+            });
+            break;
+        default:
+            options.AddConsoleExporter();
+            break;
+    }
+});
+
+builder.Services.AddRazorPages();
+builder.Services.AddDbContext<RazorPagesMovieContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("RazorPagesMovieContext")));
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    SeedData.Initialize(services);
 }
+
+if (!app.Environment.IsDevelopment())
+{
+    //logger.Info("develop environment, use ExceptionsHandler /Error");
+    app.UseExceptionHandler("/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UseRouting();
+
+app.UseAuthorization();
+
+app.MapRazorPages();
+
+app.Run();
